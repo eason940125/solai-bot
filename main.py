@@ -25,28 +25,15 @@ def home():
 @app.route("/recommend", methods=["POST", "GET"])
 def recommend():
     print("[LOG] /recommend 被呼叫")
-    send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
+    send_message("*[即時幣種推薦]*\n幣種：$SOLA\n交易量暴增，短線關注機會！")
     return "OK"
-
-@app.route("/test_recommend", methods=["GET"])
-def test_recommend():
-    print("[LOG] /test_recommend 被呼叫")
-    send_message("*[暴漲速報]*\n幣種：$MOONPUMP\n狀態：交易量暴增 +230%\n流動性：132 SOL\n買盤地址激增：+204 個\n建議操作：`短線快進快出`，AI 評分：8.7/10\n提示：具備迷因熱度但持倉風險高，請謹慎入場。")
-    send_message("*[每日精選]*\n幣種：$SOLGENIUS\n上線時間：18 小時內\n流動性：405 SOL\n持倉地址成長：+560 個\n建議操作：`中短線關注，有機會連漲`\n技術指標：RSI 58 / MACD 金叉 / NFT 活動熱")
-    send_message("*[AI 精選]*\n幣種：$AISIGNAL\n高勝率錢包同步進場：0xA9D...E1F、0xC0F...D91 等共 6 個\n資金集中度：81.3%\n建議策略：`反向跟單 + 設止盈套利`\n模型信心：93.2%，預估高點 +320%")
-    return "Test 推播完成"
 
 @app.route("/arbitrage_test", methods=["GET"])
 def arbitrage_test():
     print("[LOG] /arbitrage_test 被呼叫")
-    send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，請稍候…")
+    send_message("🔁 *自動套利偵測啟動*
+正在分析 Solana DEX 報價與流動性差異，偵測跨平台套利機會…")
     return "Arbitrage test triggered"
-
-@app.route("/simulate_arbitrage", methods=["GET"])
-def simulate_arbitrage():
-    print("[LOG] /simulate_arbitrage 被呼叫")
-    send_message("🧪 *啟動套利模擬功能*\n模擬多平台套利機制中…\n來源 DEX: Jupiter, Raydium, Orca\n範例幣種：$SOL / $USDC\n預估利潤率：+2.31%（模擬結果）")
-    return "Arbitrage simulation started"
 
 @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
 def webhook():
@@ -59,15 +46,14 @@ def webhook():
         print(f"[LOG] 收到使用者訊息：{text}，來自 chat_id：{chat_id}")
 
         if text == "/start":
-            send_message("歡迎使用 SolAI_trader_bot！輸入 /recommend 測試推薦功能。")
+            send_message("歡迎使用 SolAI_trader_bot！輸入 /recommend 獲取即時推薦。")
         elif text == "/recommend":
-            send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
+            send_message("*[即時幣種推薦]*\n幣種：$SOLA\n交易量暴增，短線關注機會！")
         elif text == "/arbitrage_test":
-            send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，請稍候…")
-        elif text == "/simulate_arbitrage":
-            send_message("🧪 *啟動套利模擬功能*\n模擬多平台套利機制中…\n來源 DEX: Jupiter, Raydium, Orca\n範例幣種：$SOL / $USDC\n預估利潤率：+2.31%（模擬結果）")
+            send_message("🔁 *自動套利偵測啟動*
+正在分析 Solana DEX 報價與流動性差異，偵測跨平台套利機會…")
         elif text == "/help":
-            send_message("你可以使用 /start、/recommend、/test_recommend、/arbitrage_test、/simulate_arbitrage 來測試機器人。")
+            send_message("指令清單：\n/start - 開始使用\n/recommend - 即時推薦幣種\n/arbitrage_test - 啟動套利偵測\n/help - 查看說明")
 
     return "OK"
 
