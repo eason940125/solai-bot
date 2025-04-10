@@ -1,4 +1,6 @@
-flask
-requests
-solana
-base58
+Flask==2.3.3
+requests==2.31.0
+python-dotenv==1.0.1
+base58==2.1.1
+solana==0.30.1
+
