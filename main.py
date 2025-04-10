@@ -28,12 +28,13 @@ def recommend():
     send_message("*[即時幣種推薦]*\n幣種：$SOLA\n交易量暴增，短線關注機會！")
     return "OK"
 
-@app.route("/arbitrage_test", methods=["GET"])
+
+    @app.route("/arbitrage_test", methods=["GET"])
 def arbitrage_test():
     print("[LOG] /arbitrage_test 被呼叫")
-    send_message("🔁 *自動套利偵測啟動*
-正在分析 Solana DEX 報價與流動性差異，偵測跨平台套利機會…")
+    send_message("🔁 *自動套利偵測啟動*")
     return "Arbitrage test triggered"
+
 
 @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
 def webhook():
