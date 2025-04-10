@@ -21,6 +21,11 @@ def home():
     print("[LOG] GET / 被呼叫")
     return "Bot is running."
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    print("[LOG] 健康檢查 /health 被呼叫")
+    return "OK", 200
+
 @app.route("/recommend", methods=["POST", "GET"])
 def recommend():
     print("[LOG] /recommend 被呼叫")
@@ -49,3 +54,4 @@ def webhook():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    
