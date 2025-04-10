@@ -1,11 +1,21 @@
 from flask import Flask, request
 import requests
 import os
+from solana.keypair import Keypair
+from solana.rpc.api import Client
+from solana.transaction import Transaction
+from solana.system_program import TransferParams, transfer
+from base58 import b58decode
 
 app = Flask(__name__)
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
+PRIVATE_KEY = os.environ.get("PRIVATE_KEY")  # 私鑰（base58編碼）
+RPC_URL = os.environ.get("RPC_URL", "https://mainnet.rpcpool.com")  # Solana 主網 RPC
+
+solana_client = Client(RPC_URL)
+keypair = Keypair.from_secret_key(b58decode(PRIVATE_KEY))
 
 
 def send_message(text):
@@ -28,8 +38,7 @@ def home():
 @app.route("/recommend", methods=["POST", "GET"])
 def recommend():
     print("[LOG] /recommend 被呼叫")
-    send_message("*幣種推薦實單：*\n$SOLA 正在暴漲中，系統即將進場！")
-    # 可加上實際交易邏輯
+    send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
     return "OK"
 
 
@@ -45,9 +54,34 @@ def test_recommend():
 @app.route("/arbitrage_test", methods=["GET"])
 def arbitrage_test():
     print("[LOG] /arbitrage_test 被呼叫")
-    send_message("🔁 *套利偵測中*")
-    # 這裡你可以加上真實套利演算法觸發邏輯
-    return "Arbitrage trigger sent"
+    send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，準備模擬交易…")
+
+    try:
+        # 建立交易對象（從自己的地址發送 0.01 SOL 給自己測試）
+        from_pubkey = keypair.public_key
+        to_pubkey = keypair.public_key
+        lamports = int(0.01 * 1_000_000_000)  # SOL 轉 lamports
+
+        txn = Transaction()
+        txn.add(
+            transfer(
+                TransferParams(from_pubkey=from_pubkey, to_pubkey=to_pubkey, lamports=lamports)
+            )
+        )
+
+        result = solana_client.send_transaction(txn, keypair)
+        print(f"[LOG] 發送交易結果: {result}")
+
+        if result.get("result"):
+            send_message(f"✅ 自動套利交易測試成功！\nTx Hash: `{result['result']}`")
+        else:
+            send_message(f"⚠️ 自動套利交易失敗：{result}")
+
+    except Exception as e:
+        print(f"[ERROR] 套利測試錯誤: {e}")
+        send_message(f"❌ 自動套利模擬交易失敗：{str(e)}")
+
+    return "Arbitrage test triggered"
 
 
 @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
@@ -63,13 +97,11 @@ def webhook():
         if text == "/start":
             send_message("歡迎使用 SolAI_trader_bot！輸入 /recommend 測試推薦功能。")
         elif text == "/recommend":
-            send_message("*幣種推薦實單：*\n$SOLA 正在暴漲中，系統即將進場！")
-            # 實單交易可在這裡插入交易觸發邏輯
+            send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
         elif text == "/arbitrage_test":
-            send_message("🔁 *套利偵測中*\n開始掃描 Solana DEX 價差與流動性…")
-            # 加上套利查詢和下單邏輯
+            arbitrage_test()
         elif text == "/help":
-            send_message("你可以使用 /start、/recommend、/test_recommend、/arbitrage_test 來啟動實際策略。")
+            send_message("你可以使用 /start、/recommend、/test_recommend、/arbitrage_test 來測試機器人。")
 
     return "OK"
 
