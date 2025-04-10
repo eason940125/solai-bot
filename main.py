@@ -4,9 +4,11 @@ import os
 
 app = Flask(__name__)
 
+# 環境變數配置
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
+# 發送訊息功能
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
@@ -22,12 +24,14 @@ def home():
     print("[LOG] GET / 被呼叫")
     return "Bot is running."
 
+# 推薦幣種功能
 @app.route("/recommend", methods=["POST", "GET"])
 def recommend():
     print("[LOG] /recommend 被呼叫")
     send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
     return "OK"
 
+# 測試推薦幣種功能
 @app.route("/test_recommend", methods=["GET"])
 def test_recommend():
     print("[LOG] /test_recommend 被呼叫")
@@ -36,14 +40,14 @@ def test_recommend():
     send_message("*[AI 精選]*\n幣種：$AISIGNAL\n高勝率錢包同步進場：0xA9D...E1F、0xC0F...D91 等共 6 個\n資金集中度：81.3%\n建議策略：`反向跟單 + 設止盈套利`\n模型信心：93.2%，預估高點 +320%")
     return "Test 推播完成"
 
+# 套利測試功能
 @app.route("/arbitrage_test", methods=["GET"])
 def arbitrage_test():
     print("[LOG] /arbitrage_test 被呼叫")
     send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，請稍候…")
-    # 模擬一筆套利推播回應
-    send_message("✅ *偵測到潛在套利機會：*\n路徑：Jupiter DEX -> Raydium -> Orca\n幣種：$USDC ⇌ $SOL ⇌ $BONK\n預估利潤：+3.52%\n操作建議：*低滑點套利，可模擬或實單測試*")
     return "Arbitrage test triggered"
 
+# 處理 Webhook 收到的訊息
 @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     data = request.get_json()
@@ -60,7 +64,6 @@ def webhook():
             send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
         elif text == "/arbitrage_test":
             send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，請稍候…")
-            send_message("✅ *偵測到潛在套利機會：*\n路徑：Jupiter DEX -> Raydium -> Orca\n幣種：$USDC ⇌ $SOL ⇌ $BONK\n預估利潤：+3.52%\n操作建議：*低滑點套利，可模擬或實單測試*")
         elif text == "/help":
             send_message("你可以使用 /start、/recommend、/test_recommend、/arbitrage_test 來測試機器人。")
 
