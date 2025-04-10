@@ -42,6 +42,12 @@ def arbitrage_test():
     send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，請稍候…")
     return "Arbitrage test triggered"
 
+@app.route("/simulate_arbitrage", methods=["GET"])
+def simulate_arbitrage():
+    print("[LOG] /simulate_arbitrage 被呼叫")
+    send_message("🧪 *啟動套利模擬功能*\n模擬多平台套利機制中…\n來源 DEX: Jupiter, Raydium, Orca\n範例幣種：$SOL / $USDC\n預估利潤率：+2.31%（模擬結果）")
+    return "Arbitrage simulation started"
+
 @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     data = request.get_json()
@@ -56,12 +62,12 @@ def webhook():
             send_message("歡迎使用 SolAI_trader_bot！輸入 /recommend 測試推薦功能。")
         elif text == "/recommend":
             send_message("*幣種推薦測試：*\n$SOLA 正在暴漲中，短線關注！")
-        elif text == "/test_recommend":
-            test_recommend()
         elif text == "/arbitrage_test":
-            arbitrage_test()
+            send_message("🔁 *套利測試啟動*\n正在偵測 Solana DEX 自動套利機會，請稍候…")
+        elif text == "/simulate_arbitrage":
+            send_message("🧪 *啟動套利模擬功能*\n模擬多平台套利機制中…\n來源 DEX: Jupiter, Raydium, Orca\n範例幣種：$SOL / $USDC\n預估利潤率：+2.31%（模擬結果）")
         elif text == "/help":
-            send_message("你可以使用以下指令：\n/start\n/recommend\n/test_recommend\n/arbitrage_test")
+            send_message("你可以使用 /start、/recommend、/test_recommend、/arbitrage_test、/simulate_arbitrage 來測試機器人。")
 
     return "OK"
 
