@@ -1,10 +1,11 @@
 from flask import Flask, request
 import requests
+import os
 
 app = Flask(__name__)
 
-BOT_TOKEN = "7189095135:AAGRYeXwIxxt-ry08KuUJOofO2Hk8ckDsLc"
-CHAT_ID = "1958974364"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -20,7 +21,7 @@ def home():
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
-    send_message("幣種推薦測試：$SOLA 正在暴漲，進場條件符合！")
+    send_message("幣種推薦測試：$SOLA 正在突破，注意低點布局！")
     return "OK"
 
 if __name__ == '__main__':
