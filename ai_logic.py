@@ -1,6 +1,6 @@
 # ai_logic.py
 
-import random
+import random 
 import os
 
 # 讀取預設倉位上限
