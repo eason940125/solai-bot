@@ -4,18 +4,21 @@ import os
 import json
 import requests
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-REPORT_FILE = "tx_record_log.json"  # 假設這是你的交易紀錄儲存檔案
+REPORT_FILE = "tx_record_log.json"
 
-# Helper：傳送 Telegram 推播
+# 傳送 Telegram 訊息
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": text, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
-# Helper：載入交易紀錄
+# 載入交易紀錄
 def load_tx_log():
     if not os.path.exists(REPORT_FILE):
         return []
@@ -61,6 +64,5 @@ def generate_weekly_report():
 
     send_message(msg)
 
-# 可搭配 crontab 或 Render 定時任務自動執行
 if __name__ == "__main__":
     generate_weekly_report()
