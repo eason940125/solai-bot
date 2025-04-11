@@ -1,36 +1,47 @@
-# gmgn_trading.py
-
-import os
-from base64 import b64decode
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from solders.system_program import transfer, TransferParams
+from solders.rpc.requests import SendTransaction
 from solana.rpc.api import Client
-from dotenv import load_dotenv
+from solana.transaction import Transaction
+from solana.system_program import TransferParams, transfer
+from base64 import b64decode
+import os
 
-load_dotenv()
-
-PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 RPC_URL = os.getenv("RPC_URL")
-client = Client(RPC_URL)
-keypair = Keypair.from_bytes(b64decode(PRIVATE_KEY))
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 
-# 發送 SOL 至指定地址（基礎版本）
-def execute_trade(recipient_address, amount):
+client = Client(RPC_URL)
+
+def get_keypair():
     try:
-        tx = transfer(
-            TransferParams(
-                from_pubkey=keypair.pubkey(),
-                to_pubkey=Pubkey.from_string(recipient_address),
-                lamports=int(amount * 1e9)
+        decoded = b64decode(PRIVATE_KEY)
+        if len(decoded) != 64:
+            raise ValueError(f"Keypair must be 64 bytes, got {len(decoded)}")
+        return Keypair.from_bytes(decoded)
+    except Exception as e:
+        print(f"[錯誤] 無法解析私鑰：{e}")
+        raise
+
+def execute_trade(symbol: str, amount: float):
+    try:
+        keypair = get_keypair()
+        sender_pubkey = keypair.pubkey()
+
+        # 此範例示範將 SOL 轉給自己（測試用），實際上可改為 DEX swap 模組
+        tx = Transaction()
+        tx.add(
+            transfer(
+                TransferParams(
+                    from_pubkey=sender_pubkey,
+                    to_pubkey=sender_pubkey,
+                    lamports=int(amount * 1_000_000_000),
+                )
             )
         )
-        latest_blockhash = client.get_latest_blockhash()["result"]["value"]["blockhash"]
-        from solana.transaction import Transaction
-        transaction = Transaction(recent_blockhash=latest_blockhash, fee_payer=keypair.pubkey())
-        transaction.add(tx)
-        transaction.sign(keypair)
-        result = client.send_raw_transaction(transaction.serialize())
-        return result["result"]
+
+        response = client.send_transaction(tx, keypair)
+        print("[交易已送出]", response)
+        return response["result"]
     except Exception as e:
+        print(f"[錯誤] 交易發送失敗：{e}")
         return {"error": str(e)}
