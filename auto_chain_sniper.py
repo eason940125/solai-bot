@@ -17,6 +17,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 RPC_URL = os.getenv("RPC_URL")
 WALLET_PUBLIC_KEY = os.getenv("WALLET_PUBLIC_KEY")
+TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 TX_LOG_PATH = "tx_record_log.json"
 
@@ -28,6 +29,25 @@ def send_message(msg):
         requests.post(url, json=payload)
     except Exception as e:
         print("訊息發送失敗", e)
+
+# 查詢 Twitter 提及數
+
+def get_twitter_mentions(keyword):
+    headers = {"Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"}
+    params = {
+        "query": keyword,
+        "max_results": 10,
+        "tweet.fields": "created_at"
+    }
+    url = "https://api.twitter.com/2/tweets/search/recent"
+    try:
+        res = requests.get(url, headers=headers, params=params)
+        if res.status_code == 200:
+            data = res.json()
+            return len(data.get("data", []))
+    except:
+        pass
+    return 0
 
 # 從 pump.fun 取得新幣 Mint
 def get_recent_pumpfun_mints(limit=10):
@@ -86,7 +106,13 @@ async def auto_chain_sniper():
                     send_message(f"💡 資金不足，無法狙擊：{mint[:4]}... (score={score})")
                     continue
 
-                send_message(f"🎯 檢測到新 Mint 上線！\nScore: {score}\n準備買入 {amount} SOL\nMint: `{mint}`")
+                # Twitter 熱度判斷條件：Mint 地址在推文中被提及次數 > 5
+                mentions = get_twitter_mentions(mint[:6])
+                if mentions < 3:
+                    print(f"❌ 熱度不足：{mint[:6]} 僅 {mentions} 則推文")
+                    continue
+
+                send_message(f"🎯 檢測到新 Mint 上線！\nScore: {score}\n熱度：{mentions} 則推文\n準備買入 {amount} SOL\nMint: `{mint}`")
 
                 result = await send_sol_transaction(GMGN_ADDRESS, amount, simulate=False)
                 if isinstance(result, dict) and "error" in result:
