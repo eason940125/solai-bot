@@ -1,0 +1,1 @@
+# paste auto_sniper_loop.py code here
