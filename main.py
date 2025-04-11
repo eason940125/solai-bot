@@ -60,3 +60,31 @@ def webhook():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    import asyncio
+from gmgn_trading import execute_trade
+
+@bot.message_handler(commands=["buy"])
+def handle_buy(message):
+    try:
+        args = message.text.split()
+        if len(args) != 3:
+            bot.reply_to(message, "❗ 請輸入格式：/buy 幣種 數量，例如：/buy LHC 0.05")
+            return
+
+        coin = args[1].upper()
+        amount = float(args[2])
+
+        # ✅ Gmgn.ai 的代收地址（測試使用，後續可自動查最佳交易路徑）
+        recipient_address = "7u2BdyK9UDWReCkMS4eAsyReHZqYEG2ZgGdXkR2VnHfq"
+
+        bot.reply_to(message, f"🚀 準備購買 {coin}，金額 {amount} SOL...")
+
+        result = asyncio.run(execute_trade(recipient_address, amount))
+
+        if isinstance(result, dict) and "error" in result:
+            bot.send_message(message.chat.id, f"❌ 交易失敗：{result['error']}")
+        else:
+            bot.send_message(message.chat.id, f"✅ 成功送出交易！🔗 https://solscan.io/tx/{result}")
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"⚠️ 發生錯誤：{str(e)}")
