@@ -1,5 +1,3 @@
-# auto_chain_sniper.py（正式交易版）
-
 import requests
 import os
 import time
@@ -57,7 +55,10 @@ def run_sniper():
 
             # 執行真實下單
             tx = send_sol_transaction(mint, position)
-            tx_link = f"https://solscan.io/tx/{tx}" if isinstance(tx, str) else "交易失敗"
+            if isinstance(tx, str):
+                tx_link = f"https://solscan.io/tx/{tx}"
+            else:
+                tx_link = "交易失敗"
 
             # 發送推播
             send_message(f"🔥 *發現潛力新幣* {symbol}\n分數：{round(score, 2)}\nMint: `{mint}`\n實單買入 {position} SOL\n🔗 {tx_link}")
@@ -68,4 +69,4 @@ def run_sniper():
         time.sleep(15)  # 每 15 秒掃描一次
 
 if __name__ == '__main__':
-    run_sniper(
+    run_sniper()
