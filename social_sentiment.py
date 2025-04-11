@@ -11,22 +11,18 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
-# 推播 Telegram
-
+# 推播訊息
 def send_message(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
     try:
         requests.post(url, json=payload)
-    except:
-        pass
+    except Exception as e:
+        print("推播失敗", e)
 
-# 查詢 Twitter 熱度關鍵字
-
+# 查詢 Twitter 提及數
 def get_twitter_mentions(query):
-    headers = {
-        "Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"
-    }
+    headers = {"Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"}
     params = {
         "query": query,
         "max_results": 10,
@@ -43,8 +39,7 @@ def get_twitter_mentions(query):
         print("Twitter 查詢錯誤：", e)
     return 0
 
-# 檢查某個幣是否情緒熱度上升
-
+# 分析幣種熱度
 def check_coin_sentiment(keyword):
     mentions = get_twitter_mentions(keyword)
     if mentions > 5:
@@ -52,9 +47,8 @@ def check_coin_sentiment(keyword):
     else:
         print(f"{keyword} 社群推文僅 {mentions} 則，熱度一般")
 
-# 可搭配 crontab 定時執行
 if __name__ == '__main__':
-    keywords = ["$LHC", "$PUMP", "$SOL"]
+    keywords = ["$LHC", "$WIF", "$PEPE", "$PUMP"]
     for word in keywords:
         check_coin_sentiment(word)
         time.sleep(2)
