@@ -88,3 +88,32 @@ def handle_buy(message):
 
     except Exception as e:
         bot.send_message(message.chat.id, f"⚠️ 發生錯誤：{str(e)}")
+
+        import asyncio
+from jupiter_trading import send_sol_transaction
+
+@bot.message_handler(commands=["simulate"])
+def handle_simulate(message):
+    try:
+        args = message.text.split()
+        if len(args) != 3:
+            bot.reply_to(message, "❗ 請用格式：/simulate 幣種 數量，例如：/simulate LHC 0.05")
+            return
+
+        coin = args[1].upper()
+        amount = float(args[2])
+        recipient_address = "7u2BdyK9UDWReCkMS4eAsyReHZqYEG2ZgGdXkR2VnHfq"  # Gmgn.ai 的接收地址
+
+        bot.reply_to(message, f"🔍 模擬交易中 {amount} SOL 給 {coin} ...")
+
+        result = asyncio.run(send_sol_transaction(recipient_address, amount, simulate=True))
+
+        if "simulate" in result:
+            units = result['result']['unitsConsumed']
+            bot.send_message(message.chat.id, f"✅ 模擬完成！Gas 預估：{units} 單位")
+        else:
+            bot.send_message(message.chat.id, f"❌ 模擬失敗：{result.get('error', '未知錯誤')}")
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"⚠️ 發生錯誤：{str(e)}")
+
