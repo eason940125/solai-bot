@@ -1,125 +1,71 @@
-# auto_chain_sniper.py
+# auto_chain_sniper.py（正式交易版）
 
-import os
-import asyncio
 import requests
-import json
+import os
 import time
-from solana.rpc.async_api import AsyncClient
-from jupiter_trading import should_sniper, send_sol_transaction
-from ai_logic import get_decision
+from jupiter_trading import send_sol_transaction
+from ai_logic import score_coin
 from dotenv import load_dotenv
 
 load_dotenv()
 
-GMGN_ADDRESS = "7u2BdyK9UDWReCkMS4eAsyReHZqYEG2ZgGdXkR2VnHfq"
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-RPC_URL = os.getenv("RPC_URL")
-WALLET_PUBLIC_KEY = os.getenv("WALLET_PUBLIC_KEY")
-TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
+SNIPER_AMOUNT = float(os.getenv("SNIPER_AMOUNT", 0.05))
 
-TX_LOG_PATH = "tx_record_log.json"
+PUMP_FUN_LIST_URL = "https://client-api-2-1ebf686d2a32.herokuapp.com/all-tokens"
 
-# 推播訊息至 Telegram
+# 推播通知
 def send_message(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
     try:
         requests.post(url, json=payload)
     except Exception as e:
-        print("訊息發送失敗", e)
+        print("推播錯誤：", e)
 
-# 查詢 Twitter 提及數
-def get_twitter_mentions(keyword):
-    headers = {"Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"}
-    params = {
-        "query": keyword,
-        "max_results": 10,
-        "tweet.fields": "created_at"
-    }
-    url = "https://api.twitter.com/2/tweets/search/recent"
+# 掃描 pump.fun 資料
+def fetch_pump_list():
     try:
-        res = requests.get(url, headers=headers, params=params)
+        res = requests.get(PUMP_FUN_LIST_URL, timeout=10)
         if res.status_code == 200:
-            data = res.json()
-            return len(data.get("data", []))
-    except:
-        pass
-    return 0
-
-# 從 pump.fun 取得新幣 Mint
-def get_recent_pumpfun_mints(limit=10):
-    try:
-        res = requests.get("https://pump.fun/api/markets")
-        if res.status_code == 200:
-            data = res.json()
-            return [m["tokenMint"] for m in data[:limit]]
-    except:
-        pass
+            return res.json()
+    except Exception as e:
+        print("取得 pump.fun 清單失敗：", e)
     return []
 
-# 查詢 SOL 餘額
-async def get_wallet_balance():
-    client = AsyncClient(RPC_URL)
-    resp = await client.get_balance(WALLET_PUBLIC_KEY)
-    await client.close()
-    return resp.value / 1_000_000_000
+# 主邏輯：找新幣 + 分數高就真實下單
+def run_sniper():
+    seen = set()
+    print("🚀 自動狙擊啟動中...")
 
-# 寫入交易紀錄 JSON 檔案
-def record_transaction(mint, buy_price, sell_price):
-    pnl = (sell_price - buy_price) / buy_price
-    tx_log = {
-        "symbol": "UNKNOWN",
-        "mint": mint,
-        "timestamp": int(time.time()),
-        "buy_price": buy_price,
-        "sell_price": sell_price,
-        "pnl": pnl
-    }
-    try:
-        if os.path.exists(TX_LOG_PATH):
-            with open(TX_LOG_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        else:
-            data = []
-        data.append(tx_log)
-        with open(TX_LOG_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        print("寫入 tx log 發生錯誤：", e)
-
-# 自動掃鏈主程式
-async def auto_chain_sniper():
     while True:
-        recent_mints = get_recent_pumpfun_mints(limit=8)
-        balance = await get_wallet_balance()
+        tokens = fetch_pump_list()
+        for t in tokens:
+            symbol = t.get("symbol")
+            mint = t.get("mint")
+            created = t.get("created")
 
-        for mint in recent_mints:
-            if should_sniper("So11111111111111111111111111111111111111112", mint):
-                decision = get_decision(mint)
-                amount = decision["amount"]
-                score = decision["score"]
+            if not mint or mint in seen:
+                continue
 
-                if amount > balance:
-                    send_message(f"💡 資金不足，無法狙擊：{mint[:4]}... (score={score})")
-                    continue
+            score = score_coin(t)
+            if score < 0.75:
+                continue
 
-                mentions = get_twitter_mentions(mint[:6])
-                if mentions < 3:
-                    print(f"❌ 熱度不足：{mint[:6]} 僅 {mentions} 則推文")
-                    continue
+            position = SNIPER_AMOUNT * (1.5 if score >= 0.9 else 1.0)
 
-                send_message(f"🎯 檢測到新 Mint 上線！\nScore: {score}\n熱度：{mentions} 則推文\n準備買入 {amount} SOL\nMint: `{mint}`")
+            # 執行真實下單
+            tx = send_sol_transaction(mint, position)
+            tx_link = f"https://solscan.io/tx/{tx}" if isinstance(tx, str) else "交易失敗"
 
-                result = await send_sol_transaction(GMGN_ADDRESS, amount, simulate=False)
-                if isinstance(result, dict) and "error" in result:
-                    send_message(f"❌ 狙擊失敗：{result['error']}")
-                else:
-                    send_message(f"✅ 狙擊成功！[Solscan](https://solscan.io/tx/{result})")
-                    record_transaction(mint, buy_price=amount, sell_price=amount * (1 + 0.8))
+            # 發送推播
+            send_message(f"🔥 *發現潛力新幣* {symbol}\n分數：{round(score, 2)}\nMint: `{mint}`\n實單買入 {position} SOL\n🔗 {tx_link}")
 
-        await asyncio.sleep(60)
+            seen.add(mint)
+            time.sleep(2)
+
+        time.sleep(15)  # 每 15 秒掃描一次
 
 if __name__ == '__main__':
-    asyncio.run(auto_chain_sniper())
+    run_sniper(
