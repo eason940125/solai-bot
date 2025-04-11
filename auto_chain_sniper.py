@@ -31,7 +31,6 @@ def send_message(msg):
         print("訊息發送失敗", e)
 
 # 查詢 Twitter 提及數
-
 def get_twitter_mentions(keyword):
     headers = {"Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"}
     params = {
@@ -106,7 +105,6 @@ async def auto_chain_sniper():
                     send_message(f"💡 資金不足，無法狙擊：{mint[:4]}... (score={score})")
                     continue
 
-                # Twitter 熱度判斷條件：Mint 地址在推文中被提及次數 > 5
                 mentions = get_twitter_mentions(mint[:6])
                 if mentions < 3:
                     print(f"❌ 熱度不足：{mint[:6]} 僅 {mentions} 則推文")
@@ -119,7 +117,7 @@ async def auto_chain_sniper():
                     send_message(f"❌ 狙擊失敗：{result['error']}")
                 else:
                     send_message(f"✅ 狙擊成功！[Solscan](https://solscan.io/tx/{result})")
-                    record_transaction(mint, buy_price=amount, sell_price=amount * (1 + 0.8))  # 假設獲利 80%
+                    record_transaction(mint, buy_price=amount, sell_price=amount * (1 + 0.8))
 
         await asyncio.sleep(60)
 
