@@ -1,0 +1,4 @@
+.env
+__pycache__/
+*.pyc
+.tx_record_log.json
